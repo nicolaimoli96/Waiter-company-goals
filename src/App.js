@@ -232,15 +232,20 @@ function App() {
           
           // Check if token is expired (basic check)
           try {
-            const tokenPayload = JSON.parse(atob(token.split('.')[1]));
-            const currentTime = Date.now() / 1000;
-            
-            if (tokenPayload.exp && tokenPayload.exp < currentTime) {
-              // Token is expired
-              localStorage.removeItem('token');
-              localStorage.removeItem('user');
-              setLoading(false);
-              return;
+            // Handle demo tokens (they start with 'demo-token-')
+            if (token.startsWith('demo-token-')) {
+              // Demo tokens don't expire, just continue
+            } else {
+              const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+              const currentTime = Date.now() / 1000;
+              
+              if (tokenPayload.exp && tokenPayload.exp < currentTime) {
+                // Token is expired
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                setLoading(false);
+                return;
+              }
             }
           } catch (e) {
             // Invalid token format
@@ -256,24 +261,27 @@ function App() {
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
           
           // Optionally validate token with backend (non-blocking)
-          try {
-            const response = await axios.get(`${authBaseUrl}/api/auth/validate`, {
-              headers: {
-                'Authorization': `Bearer ${token}`
+          // Skip validation for demo tokens
+          if (!token.startsWith('demo-token-')) {
+            try {
+              const response = await axios.get(`${authBaseUrl}/api/auth/validate`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              
+              if (!response.data.valid) {
+                // Token is invalid, clear storage
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                setUser(null);
+                setIsAuthenticated(false);
               }
-            });
-            
-            if (!response.data.valid) {
-              // Token is invalid, clear storage
-              localStorage.removeItem('token');
-              localStorage.removeItem('user');
-              setUser(null);
-              setIsAuthenticated(false);
+            } catch (error) {
+              // If backend is not available, keep the user logged in
+              // This prevents logout when backend is down
+              console.log('Token validation failed (backend may be down):', error);
             }
-          } catch (error) {
-            // If backend is not available, keep the user logged in
-            // This prevents logout when backend is down
-            console.log('Token validation failed (backend may be down):', error);
           }
         } catch (error) {
           localStorage.removeItem('token');
@@ -327,34 +335,29 @@ function App() {
     fetchWaiters();
   }, [baseUrl]);
 
-  // Fetch competition status when authenticated
+  // Fetch competition status when authenticated (demo mode)
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const fetchCompetitionStatus = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(`${authBaseUrl}/api/competition/status`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (response.data.competition) {
-          setCompetition(response.data.competition);
-          setCompetitionParticipation(response.data.participation.is_participating);
-          setCompetitionActual(response.data.participation.actual_quantity || 0);
-        }
-      } catch (err) {
-        console.error('Error fetching competition status:', err);
-        // If 401, user might not be authenticated properly
-        if (err.response?.status === 401) {
-          console.log('User not authenticated for competition status');
-        }
-      }
+    // Demo mode - create mock competition data
+    const mockCompetition = {
+      id: 1,
+      item: 'Marinara Pizza',
+      target_quantity: 10,
+      prize: 50.00,
+      description: 'Sell 10 Marinara pizzas to win £50!',
+      is_active: true
     };
 
-    fetchCompetitionStatus();
-  }, [isAuthenticated, authBaseUrl]);
+    const mockParticipation = {
+      is_participating: false,
+      actual_quantity: 0
+    };
+
+    setCompetition(mockCompetition);
+    setCompetitionParticipation(mockParticipation.is_participating);
+    setCompetitionActual(mockParticipation.actual_quantity);
+  }, [isAuthenticated]);
 
 
   const handleSubmit = async (e) => {
@@ -383,42 +386,18 @@ function App() {
 
   const handleCompetitionParticipation = async (participate) => {
     console.log('Setting competition participation to:', participate);
-    try {
-      const token = localStorage.getItem('token');
-      await axios.post(`${authBaseUrl}/api/competition/participate`, {
-        participate
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      setCompetitionParticipation(participate);
-      setCompetitionModalOpen(false);
-      console.log('Participation updated successfully');
-    } catch (err) {
-      console.error('Error updating participation:', err);
-      setError('Error updating participation: ' + err.response?.data?.error);
-    }
+    // Demo mode - just update local state
+    setCompetitionParticipation(participate);
+    setCompetitionModalOpen(false);
+    console.log('Participation updated successfully (demo mode)');
   };
 
   const handleCompetitionActualChange = async (value) => {
     console.log('Updating competition actual to:', value);
     setCompetitionActual(value);
     
-    // Update progress on backend
-    try {
-      const token = localStorage.getItem('token');
-      await axios.put(`${authBaseUrl}/api/competition/progress`, {
-        actualQuantity: value
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      console.log('Competition progress updated successfully');
-    } catch (err) {
-      console.error('Error updating competition progress:', err);
-    }
+    // Demo mode - just update local state
+    console.log('Competition progress updated successfully (demo mode)');
   };
 
   // Show loading screen

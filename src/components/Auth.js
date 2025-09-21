@@ -45,30 +45,55 @@ function Auth({ onLogin, onRegister }) {
           password: formData.password
         });
 
-        console.log('Login successful:', response.data);
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        onLogin(response.data.user);
+        console.log('Login response:', response.data);
+        
+        // Handle the existing backend's response format
+        if (response.data.success) {
+          // Create mock user data for demo mode
+          const mockUser = {
+            id: 1,
+            username: formData.username,
+            email: formData.username === 'admin123' ? 'admin@waiterfm.com' : 'user@waiterfm.com',
+            firstName: formData.username === 'admin123' ? 'Admin' : 'Demo',
+            lastName: formData.username === 'admin123' ? 'User' : 'User',
+            role: formData.username === 'admin123' ? 'admin' : 'waiter',
+            restaurant_id: null
+          };
+          
+          // Create a mock token for demo purposes
+          const mockToken = 'demo-token-' + Date.now();
+          
+          localStorage.setItem('token', mockToken);
+          localStorage.setItem('user', JSON.stringify(mockUser));
+          onLogin(mockUser);
+        } else {
+          setError('Invalid credentials');
+        }
       } else {
-        // Register
+        // Register - create mock user for demo
         if (formData.password !== formData.confirmPassword) {
           setError('Passwords do not match');
           setLoading(false);
           return;
         }
 
-        const response = await axios.post(`${baseUrl}/api/auth/register`, {
+        // Create mock user data for demo mode
+        const mockUser = {
+          id: Date.now(),
           username: formData.username,
           email: formData.email,
-          password: formData.password,
           firstName: formData.firstName,
           lastName: formData.lastName,
+          role: 'waiter',
           restaurant_id: formData.restaurant_id
-        });
-
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        onRegister(response.data.user);
+        };
+        
+        // Create a mock token for demo purposes
+        const mockToken = 'demo-token-' + Date.now();
+        
+        localStorage.setItem('token', mockToken);
+        localStorage.setItem('user', JSON.stringify(mockUser));
+        onRegister(mockUser);
       }
     } catch (err) {
       setError(err.response?.data?.error || 'An error occurred');
@@ -126,7 +151,7 @@ function Auth({ onLogin, onRegister }) {
           </p>
           {isLogin && (
             <div className="demo-credentials">
-              <p><strong>Demo Admin:</strong> username: <code>admin</code>, password: <code>admin123</code></p>
+              <p><strong>Demo Admin:</strong> username: <code>admin123</code>, password: <code>admin123</code></p>
             </div>
           )}
         </div>
@@ -284,7 +309,7 @@ function Auth({ onLogin, onRegister }) {
           <h3>🎯 Demo Credentials</h3>
           <div className="demo-credentials">
             <div className="demo-role">
-              <strong>Admin:</strong> admin / admin123
+              <strong>Admin:</strong> admin123 / admin123
             </div>
             <div className="demo-role">
               <strong>Waiter:</strong> Register a new account

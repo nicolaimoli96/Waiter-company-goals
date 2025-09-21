@@ -45,22 +45,18 @@ function AdminPage() {
         
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         
-        // Check for active competition
-        const response = await axios.get(`${baseUrl}/api/competition/active`);
-        if (response.data.competition) {
-          setIsActive(true);
-          setCompetition({
-            item: response.data.competition.item,
-            targetQuantity: response.data.competition.target_quantity,
-            prize: response.data.competition.prize,
-            description: response.data.competition.description
-          });
-        }
+        // Demo mode - skip backend competition check since endpoint doesn't exist
+        // In demo mode, we'll manage competition state locally
+        console.log('Admin panel loaded in demo mode');
+        
       } catch (error) {
         console.error('Auth check failed:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/';
+        // Only redirect if it's not a demo token
+        if (!token.startsWith('demo-token-')) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/';
+        }
       } finally {
         setLoading(false);
       }
@@ -113,9 +109,9 @@ function AdminPage() {
 
   const handleStopCompetition = async () => {
     try {
-      await axios.post(`${baseUrl}/api/competition/stop`);
+      // Demo mode - just update local state
       setIsActive(false);
-      setSuccess('Competition stopped successfully!');
+      setSuccess('Competition stopped successfully! (Demo Mode)');
       setError(null);
       
       setTimeout(() => {

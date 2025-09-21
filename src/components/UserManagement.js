@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import './UserManagement.css';
 
 function UserManagement() {
@@ -9,11 +8,7 @@ function UserManagement() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [userHistory, setUserHistory] = useState([]);
 
-  // Determine base URL
-  const isProduction = process.env.NODE_ENV === 'production';
-  const baseUrl = isProduction 
-    ? 'https://waiter-backend-futa.onrender.com'
-    : 'http://localhost:5001';
+  // Demo mode - no backend API calls needed
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -60,11 +55,11 @@ function UserManagement() {
       setUsers(mockUsers);
       console.log('User management loaded in demo mode');
     } catch (err) {
-      setError('Error fetching users: ' + err.response?.data?.error);
+      setError('Error fetching users: ' + (err.response?.data?.error || 'Unknown error'));
     } finally {
       setLoading(false);
     }
-  }, [baseUrl]);
+  }, []); // Removed baseUrl dependency since we're not using it
 
   useEffect(() => {
     fetchUsers();
